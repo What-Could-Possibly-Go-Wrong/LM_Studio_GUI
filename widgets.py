@@ -1,6 +1,6 @@
 import uuid
 import logging
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
+from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit, QApplication
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QBrush, QPen, QPainterPath
 import api_client
@@ -24,6 +24,7 @@ class NodeWidget(QGraphicsItem):
         super().__init__()
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        self.setAcceptHoverEvents(True)
         self.name = name
         self.node_id = node_id or str(uuid.uuid4())
         self.inputs = []
@@ -73,6 +74,12 @@ class NodeWidget(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         pass
+
+    def hoverEnterEvent(self, event):
+        QApplication.instance().setOverrideCursor(Qt.CursorShape.OpenHandCursor)
+
+    def hoverLeaveEvent(self, event):
+        QApplication.instance().restoreOverrideCursor()
 
 class Connection(QGraphicsPathItem):
     def __init__(self, start_port, end_port):
