@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
         self.view = ConnectionView(self.scene)
 
         self.add_node_button = QPushButton("Add Node")
-        self.add_node_button.clicked.connect(self.add_node)
+        self.add_node_button.clicked.connect(lambda: self.add_node())
 
         self.save_button = QPushButton("Save Graph")
         self.save_button.clicked.connect(self.save_graph)
