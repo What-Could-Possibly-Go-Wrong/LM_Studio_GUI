@@ -125,49 +125,53 @@ class MainWindow(QMainWindow):
         logging.info("Graph loaded from graph.json")
 
     def execute_graph(self):
-        nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
-        connections = [item for item in self.scene.items() if isinstance(item, Connection)]
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
+            connections = [item for item in self.scene.items() if isinstance(item, Connection)]
 
-        # Build adjacency list and in-degree map
-        adj = {node.node_id: [] for node in nodes}
-        in_degree = {node.node_id: 0 for node in nodes}
-        node_map = {node.node_id: node for node in nodes}
+            # Build adjacency list and in-degree map
+            adj = {node.node_id: [] for node in nodes}
+            in_degree = {node.node_id: 0 for node in nodes}
+            node_map = {node.node_id: node for node in nodes}
 
-        for conn in connections:
-            start_node = conn.start_port.parentItem()
-            end_node = conn.end_port.parentItem()
-            adj[start_node.node_id].append(end_node.node_id)
-            in_degree[end_node.node_id] += 1
-
-        # Find nodes with in-degree 0
-        queue = [node_id for node_id, degree in in_degree.items() if degree == 0]
-
-        execution_order = []
-        while queue:
-            node_id = queue.pop(0)
-            execution_order.append(node_id)
-
-            for neighbor_id in adj[node_id]:
-                in_degree[neighbor_id] -= 1
-                if in_degree[neighbor_id] == 0:
-                    queue.append(neighbor_id)
-
-        if len(execution_order) != len(nodes):
-            logging.error("Cycle detected in the graph. Cannot execute.")
-            return
-
-        logging.info(f"Execution order: {execution_order}")
-
-        for node_id in execution_order:
-            node = node_map[node_id]
-            # Gather inputs from connections
-            node.inputs = []
             for conn in connections:
-                if conn.end_port.parentItem() == node:
-                    start_node = conn.start_port.parentItem()
-                    node.inputs.append(start_node.output)
+                start_node = conn.start_port.parentItem()
+                end_node = conn.end_port.parentItem()
+                adj[start_node.node_id].append(end_node.node_id)
+                in_degree[end_node.node_id] += 1
 
-            node.execute()
+            # Find nodes with in-degree 0
+            queue = [node_id for node_id, degree in in_degree.items() if degree == 0]
+
+            execution_order = []
+            while queue:
+                node_id = queue.pop(0)
+                execution_order.append(node_id)
+
+                for neighbor_id in adj[node_id]:
+                    in_degree[neighbor_id] -= 1
+                    if in_degree[neighbor_id] == 0:
+                        queue.append(neighbor_id)
+
+            if len(execution_order) != len(nodes):
+                logging.error("Cycle detected in the graph. Cannot execute.")
+                return
+
+            logging.info(f"Execution order: {execution_order}")
+
+            for node_id in execution_order:
+                node = node_map[node_id]
+                # Gather inputs from connections
+                node.inputs = []
+                for conn in connections:
+                    if conn.end_port.parentItem() == node:
+                        start_node = conn.start_port.parentItem()
+                        node.inputs.append(start_node.output)
+
+                node.execute()
+        finally:
+            QApplication.restoreOverrideCursor()
 
 
 if __name__ == "__main__":
