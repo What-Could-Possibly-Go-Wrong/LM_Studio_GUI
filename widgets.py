@@ -1,7 +1,7 @@
 import uuid
 import logging
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
-from PyQt6.QtCore import Qt, QPointF
+from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit, QApplication
+from PyQt6.QtCore import Qt, QPointF, QRectF
 from PyQt6.QtGui import QBrush, QPen, QPainterPath
 import api_client
 
@@ -20,6 +20,9 @@ class Port(QGraphicsItem):
         pass # The child rect will paint itself
 
 class NodeWidget(QGraphicsItem):
+    NODE_WIDTH = 150
+    NODE_HEIGHT = 100
+
     def __init__(self, name="LLM Box", node_id=None):
         super().__init__()
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
@@ -28,23 +31,14 @@ class NodeWidget(QGraphicsItem):
         self.node_id = node_id or str(uuid.uuid4())
         self.inputs = []
         self.output = None
-
-        # Create the main box
-        self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
-        self.rect.setPen(QPen(Qt.GlobalColor.white))
-
-        # Create the title
-        self.title = QGraphicsTextItem(self.name, self)
-        self.title.setDefaultTextColor(Qt.GlobalColor.white)
-        self.title.setPos(5, 5)
+        self.is_executing = False
 
         # Add ports
         self.input_port = Port(self)
-        self.input_port.setPos(0, 50)
+        self.input_port.setPos(0, self.NODE_HEIGHT / 2)
 
         self.output_port = Port(self, is_output=True)
-        self.output_port.setPos(150, 50)
+        self.output_port.setPos(self.NODE_WIDTH, self.NODE_HEIGHT / 2)
 
     def to_dict(self):
         return {
@@ -54,25 +48,39 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
-        logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
-            self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
-            logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
-            self.output = "" # Or handle the error appropriately
+        self.is_executing = True
+        self.update()
+        QApplication.processEvents()
+
+        try:
+            prompt = " ".join(map(str, self.inputs))
+            logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
+            completion = api_client.post_completion(prompt)
+            if completion:
+                self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
+                logging.info(f"Node {self.node_id} produced output: {self.output}")
+            else:
+                self.output = ""
+        finally:
+            self.is_executing = False
+            self.update()
+
         return self.output
 
 
     def boundingRect(self):
-        return self.rect.boundingRect()
+        return QRectF(0, 0, self.NODE_WIDTH, self.NODE_HEIGHT)
 
     def paint(self, painter, option, widget):
-        pass
+        # Draw the main box
+        brush = QBrush(Qt.GlobalColor.yellow) if self.is_executing else QBrush(Qt.GlobalColor.darkGray)
+        painter.setBrush(brush)
+        painter.setPen(QPen(Qt.GlobalColor.white))
+        painter.drawRect(0, 0, self.NODE_WIDTH, self.NODE_HEIGHT)
+
+        # Draw the title
+        painter.setPen(QPen(Qt.GlobalColor.white))
+        painter.drawText(5, 15, self.name)
 
 class Connection(QGraphicsPathItem):
     def __init__(self, start_port, end_port):
