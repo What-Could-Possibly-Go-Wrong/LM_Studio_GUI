@@ -1,0 +1,9 @@
+2026-01-03 20:06:17,648 - INFO - Application Started
+2026-01-03 20:06:17,654 - ERROR - Error fetching models: HTTPConnectionPool(host='localhost', port=1234): Max retries exceeded with url: /v1/models (Caused by NewConnectionError("HTTPConnection(host='localhost', port=1234): Failed to establish a new connection: [Errno 111] Connection refused"))
+2026-01-03 20:06:17,669 - INFO - Added a new node to the scene: 50f2e4a9-8848-43d7-b65c-455a0ee49de7
+2026-01-03 20:06:17,670 - INFO - Added a new node to the scene: acaf913f-61b4-438e-8813-c4d8126105fe
+2026-01-03 20:06:18,673 - INFO - Execution order: ['50f2e4a9-8848-43d7-b65c-455a0ee49de7', 'acaf913f-61b4-438e-8813-c4d8126105fe']
+2026-01-03 20:06:18,674 - INFO - Executing node 50f2e4a9-8848-43d7-b65c-455a0ee49de7 with prompt:
+2026-01-03 20:06:18,677 - ERROR - Error posting completion: HTTPConnectionPool(host='localhost', port=1234): Max retries exceeded with url: /v1/chat/completions (Caused by NewConnectionError("HTTPConnection(host='localhost', port=1234): Failed to establish a new connection: [Errno 111] Connection refused"))
+2026-01-03 20:06:18,678 - INFO - Executing node acaf913f-61b4-438e-8813-c4d8126105fe with prompt:
+2026-01-03 20:06:18,680 - ERROR - Error posting completion: HTTPConnectionPool(host='localhost', port=1234): Max retries exceeded with url: /v1/chat/completions (Caused by NewConnectionError("HTTPConnection(host='localhost', port=1234): Failed to establish a new connection: [Errno 111] Connection refused"))

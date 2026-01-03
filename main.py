@@ -160,6 +160,8 @@ class MainWindow(QMainWindow):
 
         for node_id in execution_order:
             node = node_map[node_id]
+            node.set_state("processing")
+            QApplication.processEvents()  # Force UI update
             # Gather inputs from connections
             node.inputs = []
             for conn in connections:
@@ -168,6 +170,7 @@ class MainWindow(QMainWindow):
                     node.inputs.append(start_node.output)
 
             node.execute()
+            node.set_state("completed")
 
 
 if __name__ == "__main__":

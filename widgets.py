@@ -5,6 +5,12 @@ from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QBrush, QPen, QPainterPath
 import api_client
 
+# --- Constants ---
+NODE_COLOR_DEFAULT = Qt.GlobalColor.darkGray
+NODE_COLOR_PROCESSING = Qt.GlobalColor.yellow
+NODE_COLOR_COMPLETED = Qt.GlobalColor.green
+# ---         ---
+
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
         super().__init__(parent)
@@ -45,6 +51,15 @@ class NodeWidget(QGraphicsItem):
 
         self.output_port = Port(self, is_output=True)
         self.output_port.setPos(150, 50)
+
+    def set_state(self, state):
+        if state == "processing":
+            self.rect.setBrush(QBrush(NODE_COLOR_PROCESSING))
+        elif state == "completed":
+            self.rect.setBrush(QBrush(NODE_COLOR_COMPLETED))
+        else:
+            self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
+        self.update()
 
     def to_dict(self):
         return {
