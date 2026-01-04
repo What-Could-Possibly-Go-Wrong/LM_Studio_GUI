@@ -2,8 +2,12 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
+
+# Define some constants for colors
+NODE_COLOR_DEFAULT = QColor("#3c3c3c")  # A dark grey
+NODE_COLOR_PROCESSING = QColor("#5a5a9b") # A purplish blue
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
@@ -31,7 +35,7 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
+        self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
         self.rect.setPen(QPen(Qt.GlobalColor.white))
 
         # Create the title
@@ -53,18 +57,30 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
-    def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
-        logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
-            self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
-            logging.info(f"Node {self.node_id} produced output: {self.output}")
+    def set_processing(self, is_processing):
+        """Changes the color of the node to indicate processing."""
+        if is_processing:
+            self.rect.setBrush(QBrush(NODE_COLOR_PROCESSING))
         else:
-            self.output = "" # Or handle the error appropriately
+            self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
+        self.update()
+
+    def execute(self):
+        try:
+            # For now, we'll just join the inputs
+            prompt = " ".join(map(str, self.inputs)) # Ensure all inputs are strings
+            logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
+            completion = api_client.post_completion(prompt)
+            if completion and 'choices' in completion and completion['choices']:
+                message = completion['choices'][0].get('message', {})
+                self.output = message.get('content', '')
+                logging.info(f"Node {self.node_id} produced output: {self.output}")
+            else:
+                self.output = "Error or empty response"
+                logging.warning(f"Node {self.node_id} received an empty or invalid response.")
+        except Exception as e:
+            self.output = f"Error: {e}"
+            logging.error(f"Node {self.node_id} failed to execute: {e}")
         return self.output
 
 
