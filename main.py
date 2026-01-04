@@ -167,7 +167,14 @@ class MainWindow(QMainWindow):
                     start_node = conn.start_port.parentItem()
                     node.inputs.append(start_node.output)
 
-            node.execute()
+            # Correctly manage the visual state from the main execution loop
+            node.set_processing(True)
+            QApplication.processEvents() # Allow the UI to repaint before the blocking call
+            try:
+                node.execute()
+            finally:
+                node.set_processing(False)
+                QApplication.processEvents() # Allow the UI to repaint after the blocking call
 
 
 if __name__ == "__main__":
