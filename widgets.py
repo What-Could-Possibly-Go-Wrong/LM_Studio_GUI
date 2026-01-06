@@ -2,8 +2,13 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
+
+# Constants for node colors
+NODE_COLOR_DEFAULT = QColor("#6c757d")  # A neutral gray
+NODE_COLOR_PROCESSING = QColor("#007bff")  # A vibrant blue
+NODE_COLOR_ERROR = QColor("#dc3545")  # A clear red
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
@@ -31,7 +36,7 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
+        self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
         self.rect.setPen(QPen(Qt.GlobalColor.white))
 
         # Create the title
@@ -53,18 +58,37 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
-    def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
-        logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
-            self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
-            logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
-            self.output = "" # Or handle the error appropriately
+    def execute(self, app):
+        self.rect.setBrush(QBrush(NODE_COLOR_PROCESSING))
+        self.update()
+        if app:
+            app.processEvents()
+
+        try:
+            prompt = " ".join(self.inputs)
+            logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
+            completion = api_client.post_completion(prompt)
+            if completion and completion.get('choices'):
+                self.output = completion['choices'][0].get('message', {}).get('content', '')
+                logging.info(f"Node {self.node_id} produced output: {self.output}")
+            else:
+                self.output = "Error: Invalid or empty response from API"
+                logging.error(f"Node {self.node_id} received an invalid response.")
+                self.rect.setBrush(QBrush(NODE_COLOR_ERROR))
+        except Exception as e:
+            self.output = f"Error: {e}"
+            logging.error(f"Exception during execution of node {self.node_id}: {e}")
+            self.rect.setBrush(QBrush(NODE_COLOR_ERROR))
+        finally:
+            # If the node is NOT in an error state, revert to the default color.
+            # Otherwise, let it remain red to indicate the error persistently.
+            if self.rect.brush().color() != NODE_COLOR_ERROR:
+                self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
+
+            self.update()
+            if app:
+                app.processEvents()
+
         return self.output
 
 

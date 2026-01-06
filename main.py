@@ -3,8 +3,9 @@ import logging
 import json
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
 from PyQt6.QtCore import Qt, QLineF
+from PyQt6.QtGui import QBrush
 import api_client
-from widgets import NodeWidget, Port, Connection
+from widgets import NodeWidget, Port, Connection, NODE_COLOR_DEFAULT
 
 # Configure logging
 logging.basicConfig(filename='debug.log',
@@ -128,6 +129,12 @@ class MainWindow(QMainWindow):
         nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
         connections = [item for item in self.scene.items() if isinstance(item, Connection)]
 
+        # Reset node states before execution
+        for node in nodes:
+            node.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))  # Reset to default
+            node.output = None
+            node.update()
+
         # Build adjacency list and in-degree map
         adj = {node.node_id: [] for node in nodes}
         in_degree = {node.node_id: 0 for node in nodes}
@@ -158,6 +165,7 @@ class MainWindow(QMainWindow):
 
         logging.info(f"Execution order: {execution_order}")
 
+        app = QApplication.instance()
         for node_id in execution_order:
             node = node_map[node_id]
             # Gather inputs from connections
@@ -165,9 +173,11 @@ class MainWindow(QMainWindow):
             for conn in connections:
                 if conn.end_port.parentItem() == node:
                     start_node = conn.start_port.parentItem()
-                    node.inputs.append(start_node.output)
+                    # Ensure we are appending a string, as output might be None initially
+                    if start_node.output:
+                        node.inputs.append(str(start_node.output))
 
-            node.execute()
+            node.execute(app)
 
 
 if __name__ == "__main__":
