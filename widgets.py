@@ -2,8 +2,13 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
+
+# Constants
+NODE_COLOR_DEFAULT = QColor(Qt.GlobalColor.darkGray)
+NODE_COLOR_PROCESSING = QColor(Qt.GlobalColor.blue)
+NODE_COLOR_ERROR = QColor(Qt.GlobalColor.red)
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
@@ -31,7 +36,7 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
+        self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
         self.rect.setPen(QPen(Qt.GlobalColor.white))
 
         # Create the title
@@ -53,19 +58,30 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
+    def set_state(self, state):
+        if state == 'processing':
+            self.rect.setBrush(QBrush(NODE_COLOR_PROCESSING))
+        elif state == 'error':
+            self.rect.setBrush(QBrush(NODE_COLOR_ERROR))
+        else:
+            self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
+        self.update()
+
     def execute(self):
         # For now, we'll just join the inputs
         prompt = " ".join(self.inputs)
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
         completion = api_client.post_completion(prompt)
-        if completion:
+        if completion and completion.get('choices'):
             # A simple way to get the content, this might need to be adjusted
             # based on the actual response structure from LM Studio
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
+            return self.output
         else:
             self.output = "" # Or handle the error appropriately
-        return self.output
+            logging.error(f"Node {self.node_id} failed to execute.")
+            raise RuntimeError("API call failed or returned invalid data.")
 
 
     def boundingRect(self):
