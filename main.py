@@ -126,6 +126,11 @@ class MainWindow(QMainWindow):
 
     def execute_graph(self):
         nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
+        # Reset all nodes to default state before execution
+        for node in nodes:
+            node.set_state('default')
+        QApplication.processEvents()
+
         connections = [item for item in self.scene.items() if isinstance(item, Connection)]
 
         # Build adjacency list and in-degree map
@@ -160,6 +165,9 @@ class MainWindow(QMainWindow):
 
         for node_id in execution_order:
             node = node_map[node_id]
+            node.set_state('processing')
+            QApplication.processEvents()
+
             # Gather inputs from connections
             node.inputs = []
             for conn in connections:
@@ -167,7 +175,16 @@ class MainWindow(QMainWindow):
                     start_node = conn.start_port.parentItem()
                     node.inputs.append(start_node.output)
 
-            node.execute()
+            try:
+                node.execute()
+                # On success, reset to default color
+                node.set_state('default')
+                QApplication.processEvents()
+            except Exception as e:
+                logging.error(f"Error executing node {node.node_id}: {e}")
+                node.set_state('error')
+                QApplication.processEvents()
+                return  # Stop execution on error
 
 
 if __name__ == "__main__":
