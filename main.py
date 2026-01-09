@@ -3,8 +3,9 @@ import logging
 import json
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
 from PyQt6.QtCore import Qt, QLineF
+from PyQt6.QtGui import QBrush
 import api_client
-from widgets import NodeWidget, Port, Connection
+from widgets import NodeWidget, Port, Connection, NODE_COLOR_DEFAULT
 
 # Configure logging
 logging.basicConfig(filename='debug.log',
@@ -158,6 +159,9 @@ class MainWindow(QMainWindow):
 
         logging.info(f"Execution order: {execution_order}")
 
+        for node in nodes:
+            node.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
+
         for node_id in execution_order:
             node = node_map[node_id]
             # Gather inputs from connections
@@ -166,8 +170,11 @@ class MainWindow(QMainWindow):
                 if conn.end_port.parentItem() == node:
                     start_node = conn.start_port.parentItem()
                     node.inputs.append(start_node.output)
-
-            node.execute()
+            try:
+                node.execute()
+            except Exception as e:
+                logging.error(f"Execution stopped due to error in node {node.node_id}: {e}")
+                break
 
 
 if __name__ == "__main__":

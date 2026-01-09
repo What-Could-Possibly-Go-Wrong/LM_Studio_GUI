@@ -1,9 +1,14 @@
 import uuid
 import logging
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
+from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit, QApplication
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QBrush, QPen, QPainterPath
 import api_client
+
+# UX Color Constants
+NODE_COLOR_DEFAULT = Qt.GlobalColor.darkGray
+NODE_COLOR_PROCESSING = Qt.GlobalColor.yellow
+NODE_COLOR_ERROR = Qt.GlobalColor.red
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
@@ -31,7 +36,7 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
+        self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
         self.rect.setPen(QPen(Qt.GlobalColor.white))
 
         # Create the title
@@ -54,17 +59,31 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
+        self.rect.setBrush(QBrush(NODE_COLOR_PROCESSING))
+        self.update()
+        QApplication.processEvents()
+
+        prompt = " ".join(map(str, self.inputs))
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
-            self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
-            logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
-            self.output = "" # Or handle the error appropriately
+
+        try:
+            completion = api_client.post_completion(prompt)
+            if completion and 'choices' in completion and completion['choices']:
+                self.output = completion['choices'][0].get('message', {}).get('content', '')
+                logging.info(f"Node {self.node_id} produced output: {self.output}")
+                self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
+                self.update()
+            else:
+                raise ValueError("Invalid completion response")
+        except Exception as e:
+            logging.error(f"Node {self.node_id} failed: {e}")
+            self.output = ""
+            self.rect.setBrush(QBrush(NODE_COLOR_ERROR))
+            self.update()
+            QApplication.processEvents()
+            raise  # Re-raise the exception to be caught in the main execution loop
+
+        QApplication.processEvents()
         return self.output
 
 
