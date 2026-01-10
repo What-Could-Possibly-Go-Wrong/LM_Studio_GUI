@@ -1,9 +1,14 @@
 import uuid
 import logging
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
+from PyQt6.QtWidgets import QApplication, QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
+
+# Constants for node colors
+NODE_COLOR_DEFAULT = QColor(Qt.GlobalColor.darkGray)
+NODE_COLOR_PROCESSING = QColor(Qt.GlobalColor.yellow)
+NODE_COLOR_ERROR = QColor(Qt.GlobalColor.red)
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
@@ -31,7 +36,7 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
+        self.rect.setBrush(QBrush(NODE_COLOR_DEFAULT))
         self.rect.setPen(QPen(Qt.GlobalColor.white))
 
         # Create the title
@@ -54,6 +59,9 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
+        self.rect.setBrush(QBrush(NODE_COLOR_PROCESSING))
+        self.update()
+        QApplication.processEvents()
         # For now, we'll just join the inputs
         prompt = " ".join(self.inputs)
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
@@ -65,6 +73,9 @@ class NodeWidget(QGraphicsItem):
             logging.info(f"Node {self.node_id} produced output: {self.output}")
         else:
             self.output = "" # Or handle the error appropriately
+            self.rect.setBrush(QBrush(NODE_COLOR_ERROR))
+            self.update()
+            raise Exception("API call failed")
         return self.output
 
 
