@@ -1,0 +1,9 @@
+2026-01-11 20:14:50,193 - INFO - Application Started
+2026-01-11 20:14:50,213 - ERROR - Error fetching models: HTTPConnectionPool(host='localhost', port=1234): Max retries exceeded with url: /v1/models (Caused by NewConnectionError("HTTPConnection(host='localhost', port=1234): Failed to establish a new connection: [Errno 111] Connection refused"))
+2026-01-11 20:14:50,234 - INFO - Added a new node to the scene: 0ba30814-82ef-44c9-91d5-a693994c59c8
+2026-01-11 20:14:50,234 - INFO - Added a new node to the scene: 0a2e041b-40c4-4037-8be3-f24b7764868d
+2026-01-11 20:14:50,247 - INFO - Execution order: ['0ba30814-82ef-44c9-91d5-a693994c59c8', '0a2e041b-40c4-4037-8be3-f24b7764868d']
+2026-01-11 20:14:50,250 - INFO - Executing node 0ba30814-82ef-44c9-91d5-a693994c59c8 with prompt: ''
+2026-01-11 20:14:50,251 - ERROR - Node 0ba30814-82ef-44c9-91d5-a693994c59c8 failed to execute: Failed to connect to API
+2026-01-11 20:14:50,252 - INFO - Executing node 0a2e041b-40c4-4037-8be3-f24b7764868d with prompt: ''
+2026-01-11 20:14:50,252 - ERROR - Node 0a2e041b-40c4-4037-8be3-f24b7764868d failed to execute: Failed to connect to API

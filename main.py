@@ -128,6 +128,11 @@ class MainWindow(QMainWindow):
         nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
         connections = [item for item in self.scene.items() if isinstance(item, Connection)]
 
+        # Reset all nodes to default color before execution
+        for node in nodes:
+            node.reset_color()
+        QApplication.processEvents()
+
         # Build adjacency list and in-degree map
         adj = {node.node_id: [] for node in nodes}
         in_degree = {node.node_id: 0 for node in nodes}
