@@ -16,12 +16,15 @@ def get_models():
 def post_completion(prompt):
     """Sends a prompt to the server and gets a response."""
     try:
-        response = requests.post("http://localhost:1234/v1/chat/completions",
-                                 json={"messages": [{"role": "user", "content": prompt}]})
+        response = requests.post(
+            "http://localhost:1234/v1/chat/completions",
+            json={"messages": [{"role": "user", "content": prompt}]},
+            timeout=10
+        )
         response.raise_for_status()
         completion = response.json()
         logging.info(f"Successfully received completion: {completion}")
         return completion
     except requests.exceptions.RequestException as e:
         logging.error(f"Error posting completion: {e}")
-        return None
+        raise e
