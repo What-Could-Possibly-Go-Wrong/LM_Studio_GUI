@@ -1,0 +1,12 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Log files
+*.log
+
+# Verification artifacts
+verify.py
+verification_screenshot.png
