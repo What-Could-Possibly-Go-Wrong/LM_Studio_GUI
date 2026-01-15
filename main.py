@@ -4,7 +4,7 @@ import json
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
 from PyQt6.QtCore import Qt, QLineF
 import api_client
-from widgets import NodeWidget, Port, Connection
+from widgets import NodeWidget, Port, Connection, NODE_COLOR_DEFAULT
 
 # Configure logging
 logging.basicConfig(filename='debug.log',
@@ -127,6 +127,10 @@ class MainWindow(QMainWindow):
     def execute_graph(self):
         nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
         connections = [item for item in self.scene.items() if isinstance(item, Connection)]
+
+        # Reset node states before execution
+        for node in nodes:
+            node.set_color(NODE_COLOR_DEFAULT)
 
         # Build adjacency list and in-degree map
         adj = {node.node_id: [] for node in nodes}

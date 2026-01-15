@@ -1,0 +1,4 @@
+__pycache__/
+*.log
+verify.py
+verification_screenshot*.png
