@@ -1,6 +1,6 @@
 import uuid
 import logging
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
+from PyQt6.QtWidgets import QApplication, QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QBrush, QPen, QPainterPath
 import api_client
@@ -54,17 +54,28 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
-        logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
-            self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
-            logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
-            self.output = "" # Or handle the error appropriately
+        # Change color to indicate execution
+        self.rect.setBrush(QBrush(Qt.GlobalColor.yellow))
+        self.update()
+        QApplication.processEvents()
+
+        try:
+            # For now, we'll just join the inputs
+            prompt = " ".join(self.inputs)
+            logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
+            completion = api_client.post_completion(prompt)
+            if completion:
+                # A simple way to get the content, this might need to be adjusted
+                # based on the actual response structure from LM Studio
+                self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
+                logging.info(f"Node {self.node_id} produced output: {self.output}")
+            else:
+                self.output = "" # Or handle the error appropriately
+        finally:
+            # Revert color after execution
+            self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
+            self.update()
+            QApplication.processEvents()
         return self.output
 
 
