@@ -23,5 +23,4 @@ def post_completion(prompt):
         logging.info(f"Successfully received completion: {completion}")
         return completion
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error posting completion: {e}")
-        return None
+        raise e
