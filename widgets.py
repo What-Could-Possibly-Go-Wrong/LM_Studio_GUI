@@ -2,19 +2,26 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
+import requests
+
+# Node colors
+NODE_COLOR_DEFAULT = QColor("#555555")
+NODE_COLOR_SUCCESS = QColor("#4CAF50")
+NODE_COLOR_FAILURE = QColor("#F44336")
+
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
         super().__init__(parent)
         self.is_output = is_output
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsScenePositionChanges)
-        self.rect = QGraphicsRectItem(-5, -5, 10, 10, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.cyan))
+        self.rect_item = QGraphicsRectItem(-5, -5, 10, 10, self)
+        self.rect_item.setBrush(QBrush(Qt.GlobalColor.cyan))
 
     def boundingRect(self):
-        return self.rect.boundingRect()
+        return self.rect_item.boundingRect()
 
     def paint(self, painter, option, widget):
         pass # The child rect will paint itself
@@ -30,9 +37,9 @@ class NodeWidget(QGraphicsItem):
         self.output = None
 
         # Create the main box
-        self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
-        self.rect.setPen(QPen(Qt.GlobalColor.white))
+        self.rect_item = QGraphicsRectItem(0, 0, 150, 100, self)
+        self.rect_item.setPen(QPen(Qt.GlobalColor.white))
+        self.set_color(NODE_COLOR_DEFAULT)
 
         # Create the title
         self.title = QGraphicsTextItem(self.name, self)
@@ -53,23 +60,27 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
+    def set_color(self, color):
+        brush = QBrush(color)
+        self.rect_item.setBrush(brush)
+        self.update()
+
     def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
-        logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
+        try:
+            prompt = " ".join(map(str, self.inputs))
+            logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
+            completion = api_client.post_completion(prompt)
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
-            self.output = "" # Or handle the error appropriately
+            self.set_color(NODE_COLOR_SUCCESS)
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Node {self.node_id} failed to execute: {e}")
+            self.output = ""
+            self.set_color(NODE_COLOR_FAILURE)
         return self.output
 
-
     def boundingRect(self):
-        return self.rect.boundingRect()
+        return self.rect_item.boundingRect()
 
     def paint(self, painter, option, widget):
         pass
