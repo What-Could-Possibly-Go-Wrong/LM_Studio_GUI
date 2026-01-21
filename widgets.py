@@ -2,8 +2,14 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
+
+# Constants for node colors
+NODE_COLOR_DEFAULT = QColor("#666666")  # darkGray
+NODE_COLOR_PENDING = QColor(Qt.GlobalColor.yellow)
+NODE_COLOR_SUCCESS = QColor(Qt.GlobalColor.green)
+NODE_COLOR_ERROR = QColor(Qt.GlobalColor.red)
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
@@ -30,9 +36,9 @@ class NodeWidget(QGraphicsItem):
         self.output = None
 
         # Create the main box
-        self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
-        self.rect.setPen(QPen(Qt.GlobalColor.white))
+        self.rect_item = QGraphicsRectItem(0, 0, 150, 100, self)
+        self.rect_item.setBrush(QBrush(NODE_COLOR_DEFAULT))
+        self.rect_item.setPen(QPen(Qt.GlobalColor.white))
 
         # Create the title
         self.title = QGraphicsTextItem(self.name, self)
@@ -53,23 +59,31 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
+    def set_color(self, color):
+        brush = QBrush(color)
+        self.rect_item.setBrush(brush)
+
     def execute(self):
+        self.set_color(NODE_COLOR_PENDING)
         # For now, we'll just join the inputs
         prompt = " ".join(self.inputs)
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
+        try:
+            completion = api_client.post_completion(prompt)
             # A simple way to get the content, this might need to be adjusted
             # based on the actual response structure from LM Studio
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
+            self.set_color(NODE_COLOR_SUCCESS)
+        except Exception as e:
+            logging.error(f"Node {self.node_id} failed to execute: {e}")
             self.output = "" # Or handle the error appropriately
+            self.set_color(NODE_COLOR_ERROR)
         return self.output
 
 
     def boundingRect(self):
-        return self.rect.boundingRect()
+        return self.rect_item.boundingRect()
 
     def paint(self, painter, option, widget):
         pass
