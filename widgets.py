@@ -53,18 +53,31 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
+    def set_visual_state(self, state):
+        """Sets the visual state of the node to reflect its execution status."""
+        pen = self.rect.pen()
+        if state == 'executing':
+            pen.setColor(Qt.GlobalColor.yellow)
+        elif state == 'error':
+            pen.setColor(Qt.GlobalColor.red)
+        else: # default
+            pen.setColor(Qt.GlobalColor.white)
+        self.rect.setPen(pen)
+
     def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
-        logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
+        self.set_visual_state('executing')
+        try:
+            prompt = " ".join(self.inputs)
+            logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
+            completion = api_client.post_completion(prompt)
+            # The API client now raises an exception on failure, so we assume completion is not None
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
-            self.output = "" # Or handle the error appropriately
+            self.set_visual_state('default')
+        except Exception as e:
+            logging.error(f"An exception occurred during node execution {self.node_id}: {e}")
+            self.output = ""
+            self.set_visual_state('error')
         return self.output
 
 
