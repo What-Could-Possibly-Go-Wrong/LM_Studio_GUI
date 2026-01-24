@@ -10,11 +10,11 @@ class Port(QGraphicsItem):
         super().__init__(parent)
         self.is_output = is_output
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsScenePositionChanges)
-        self.rect = QGraphicsRectItem(-5, -5, 10, 10, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.cyan))
+        self.rect_item = QGraphicsRectItem(-5, -5, 10, 10, self)
+        self.rect_item.setBrush(QBrush(Qt.GlobalColor.cyan))
 
     def boundingRect(self):
-        return self.rect.boundingRect()
+        return self.rect_item.boundingRect()
 
     def paint(self, painter, option, widget):
         pass # The child rect will paint itself
@@ -30,9 +30,9 @@ class NodeWidget(QGraphicsItem):
         self.output = None
 
         # Create the main box
-        self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
-        self.rect.setPen(QPen(Qt.GlobalColor.white))
+        self.rect_item = QGraphicsRectItem(0, 0, 150, 100, self)
+        self.rect_item.setBrush(QBrush(Qt.GlobalColor.darkGray))
+        self.rect_item.setPen(QPen(Qt.GlobalColor.white))
 
         # Create the title
         self.title = QGraphicsTextItem(self.name, self)
@@ -54,22 +54,32 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
-        # For now, we'll just join the inputs
-        prompt = " ".join(self.inputs)
+        self.set_visual_state("executing")
+        prompt = " ".join(map(str, self.inputs))
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
-            # A simple way to get the content, this might need to be adjusted
-            # based on the actual response structure from LM Studio
+        try:
+            completion = api_client.post_completion(prompt)
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
-            self.output = "" # Or handle the error appropriately
+            self.set_visual_state("default")
+        except Exception as e:
+            logging.error(f"Node {self.node_id} failed to execute: {e}")
+            self.output = ""
+            self.set_visual_state("error")
         return self.output
 
+    def set_visual_state(self, state):
+        pen = self.rect_item.pen()
+        if state == "executing":
+            pen.setColor(Qt.GlobalColor.yellow)
+        elif state == "error":
+            pen.setColor(Qt.GlobalColor.red)
+        else: # default
+            pen.setColor(Qt.GlobalColor.white)
+        self.rect_item.setPen(pen)
 
     def boundingRect(self):
-        return self.rect.boundingRect()
+        return self.rect_item.boundingRect()
 
     def paint(self, painter, option, widget):
         pass

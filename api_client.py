@@ -11,7 +11,7 @@ def get_models():
         return models
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching models: {e}")
-        return None
+        raise e
 
 def post_completion(prompt):
     """Sends a prompt to the server and gets a response."""
@@ -24,4 +24,4 @@ def post_completion(prompt):
         return completion
     except requests.exceptions.RequestException as e:
         logging.error(f"Error posting completion: {e}")
-        return None
+        raise e
