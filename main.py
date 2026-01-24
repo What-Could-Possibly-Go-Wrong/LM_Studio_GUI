@@ -126,6 +126,8 @@ class MainWindow(QMainWindow):
 
     def execute_graph(self):
         nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
+        for node in nodes:
+            node.set_visual_state("default")
         connections = [item for item in self.scene.items() if isinstance(item, Connection)]
 
         # Build adjacency list and in-degree map
