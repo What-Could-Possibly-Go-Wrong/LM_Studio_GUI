@@ -53,6 +53,14 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
+    def set_visual_state(self, state):
+        if state == "executing":
+            self.rect.setPen(QPen(Qt.GlobalColor.yellow))
+        elif state == "error":
+            self.rect.setPen(QPen(Qt.GlobalColor.red))
+        else: # default
+            self.rect.setPen(QPen(Qt.GlobalColor.white))
+
     def execute(self):
         # For now, we'll just join the inputs
         prompt = " ".join(self.inputs)

@@ -128,6 +128,10 @@ class MainWindow(QMainWindow):
         nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
         connections = [item for item in self.scene.items() if isinstance(item, Connection)]
 
+        # Reset all nodes to default state before execution
+        for node in nodes:
+            node.set_visual_state("default")
+
         # Build adjacency list and in-degree map
         adj = {node.node_id: [] for node in nodes}
         in_degree = {node.node_id: 0 for node in nodes}
@@ -160,14 +164,21 @@ class MainWindow(QMainWindow):
 
         for node_id in execution_order:
             node = node_map[node_id]
-            # Gather inputs from connections
-            node.inputs = []
-            for conn in connections:
-                if conn.end_port.parentItem() == node:
-                    start_node = conn.start_port.parentItem()
-                    node.inputs.append(start_node.output)
+            try:
+                node.set_visual_state("executing")
+                # Gather inputs from connections
+                node.inputs = []
+                for conn in connections:
+                    if conn.end_port.parentItem() == node:
+                        start_node = conn.start_port.parentItem()
+                        node.inputs.append(start_node.output)
 
-            node.execute()
+                node.execute()
+                node.set_visual_state("default")
+            except Exception as e:
+                logging.error(f"Error executing node {node_id}: {e}")
+                node.set_visual_state("error")
+                break
 
 
 if __name__ == "__main__":
