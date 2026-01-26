@@ -53,18 +53,29 @@ class NodeWidget(QGraphicsItem):
             'pos': [self.pos().x(), self.pos().y()]
         }
 
+    def set_visual_state(self, state):
+        if state == 'executing':
+            self.rect.setPen(QPen(Qt.GlobalColor.yellow))
+        elif state == 'error':
+            self.rect.setPen(QPen(Qt.GlobalColor.red))
+        else: # default
+            self.rect.setPen(QPen(Qt.GlobalColor.white))
+
     def execute(self):
-        # For now, we'll just join the inputs
+        self.set_visual_state('executing')
         prompt = " ".join(self.inputs)
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
-        completion = api_client.post_completion(prompt)
-        if completion:
+        try:
+            completion = api_client.post_completion(prompt)
             # A simple way to get the content, this might need to be adjusted
             # based on the actual response structure from LM Studio
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
-        else:
+            self.set_visual_state('default')
+        except Exception as e:
+            logging.error(f"Node {self.node_id} failed to execute: {e}")
             self.output = "" # Or handle the error appropriately
+            self.set_visual_state('error')
         return self.output
 
 
