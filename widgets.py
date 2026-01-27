@@ -46,6 +46,14 @@ class NodeWidget(QGraphicsItem):
         self.output_port = Port(self, is_output=True)
         self.output_port.setPos(150, 50)
 
+    def set_visual_state(self, state):
+        if state == "executing":
+            self.rect.setPen(QPen(Qt.GlobalColor.yellow))
+        elif state == "error":
+            self.rect.setPen(QPen(Qt.GlobalColor.red))
+        else: # "default"
+            self.rect.setPen(QPen(Qt.GlobalColor.white))
+
     def to_dict(self):
         return {
             'id': self.node_id,
@@ -54,6 +62,7 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
+        self.set_visual_state("executing")
         # For now, we'll just join the inputs
         prompt = " ".join(self.inputs)
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
@@ -63,8 +72,10 @@ class NodeWidget(QGraphicsItem):
             # based on the actual response structure from LM Studio
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
+            self.set_visual_state("default")
         else:
             self.output = "" # Or handle the error appropriately
+            self.set_visual_state("error")
         return self.output
 
 
