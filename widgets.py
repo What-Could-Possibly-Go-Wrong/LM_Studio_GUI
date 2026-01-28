@@ -2,7 +2,7 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
 
 class Port(QGraphicsItem):
@@ -54,6 +54,7 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
+        self.set_visual_state("executing")
         # For now, we'll just join the inputs
         prompt = " ".join(self.inputs)
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
@@ -63,10 +64,20 @@ class NodeWidget(QGraphicsItem):
             # based on the actual response structure from LM Studio
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
+            self.set_visual_state("default")
         else:
             self.output = "" # Or handle the error appropriately
+            self.set_visual_state("error")
         return self.output
 
+    def set_visual_state(self, state):
+        if state == "executing":
+            self.rect.setPen(QPen(QColor("blue"), 2))
+        elif state == "error":
+            self.rect.setPen(QPen(QColor("red"), 2))
+        else: # "default"
+            self.rect.setPen(QPen(Qt.GlobalColor.white))
+        self.update()
 
     def boundingRect(self):
         return self.rect.boundingRect()
