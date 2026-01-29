@@ -2,7 +2,7 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
 
 class Port(QGraphicsItem):
@@ -31,12 +31,12 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
-        self.rect.setPen(QPen(Qt.GlobalColor.white))
+        self.rect.setBrush(QBrush(QColor("darkGray")))
+        self.rect.setPen(QPen(QColor("white")))
 
         # Create the title
         self.title = QGraphicsTextItem(self.name, self)
-        self.title.setDefaultTextColor(Qt.GlobalColor.white)
+        self.title.setDefaultTextColor(QColor("white"))
         self.title.setPos(5, 5)
 
         # Add ports
@@ -46,6 +46,15 @@ class NodeWidget(QGraphicsItem):
         self.output_port = Port(self, is_output=True)
         self.output_port.setPos(150, 50)
 
+    def set_visual_state(self, state):
+        if state == 'executing':
+            pen = QPen(QColor("yellow"))
+        elif state == 'error':
+            pen = QPen(QColor("red"))
+        else: # default
+            pen = QPen(QColor("white"))
+        self.rect.setPen(pen)
+
     def to_dict(self):
         return {
             'id': self.node_id,
@@ -54,6 +63,7 @@ class NodeWidget(QGraphicsItem):
         }
 
     def execute(self):
+        self.set_visual_state('executing')
         # For now, we'll just join the inputs
         prompt = " ".join(self.inputs)
         logging.info(f"Executing node {self.node_id} with prompt: {prompt}")
@@ -63,8 +73,10 @@ class NodeWidget(QGraphicsItem):
             # based on the actual response structure from LM Studio
             self.output = completion.get('choices', [{}])[0].get('message', {}).get('content', '')
             logging.info(f"Node {self.node_id} produced output: {self.output}")
+            self.set_visual_state('default')
         else:
             self.output = "" # Or handle the error appropriately
+            self.set_visual_state('error')
         return self.output
 
 
@@ -79,7 +91,7 @@ class Connection(QGraphicsPathItem):
         super().__init__()
         self.start_port = start_port
         self.end_port = end_port
-        self.setPen(QPen(Qt.GlobalColor.white, 2))
+        self.setPen(QPen(QColor("white"), 2))
         self.update_path()
 
     def to_dict(self):
