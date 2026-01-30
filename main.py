@@ -3,6 +3,7 @@ import logging
 import json
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
 from PyQt6.QtCore import Qt, QLineF
+from PyQt6.QtGui import QPainter
 import api_client
 from widgets import NodeWidget, Port, Connection
 
@@ -56,17 +57,26 @@ class MainWindow(QMainWindow):
 
         self.scene = QGraphicsScene()
         self.view = ConnectionView(self.scene)
+        self.view.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         self.add_node_button = QPushButton("Add Node")
+        self.add_node_button.setToolTip("Add a new LLM node to the graph (Ctrl+N)")
+        self.add_node_button.setShortcut("Ctrl+N")
         self.add_node_button.clicked.connect(lambda: self.add_node())
 
         self.save_button = QPushButton("Save Graph")
+        self.save_button.setToolTip("Save the current graph to graph.json (Ctrl+S)")
+        self.save_button.setShortcut("Ctrl+S")
         self.save_button.clicked.connect(self.save_graph)
 
         self.load_button = QPushButton("Load Graph")
+        self.load_button.setToolTip("Load graph from graph.json (Ctrl+L)")
+        self.load_button.setShortcut("Ctrl+L")
         self.load_button.clicked.connect(self.load_graph)
 
         self.execute_button = QPushButton("Execute Graph")
+        self.execute_button.setToolTip("Execute the LLM graph in topological order (Ctrl+R)")
+        self.execute_button.setShortcut("Ctrl+R")
         self.execute_button.clicked.connect(self.execute_graph)
 
         self.layout.addWidget(self.add_node_button)
@@ -192,6 +202,10 @@ if __name__ == "__main__":
             border-radius: 3px;
         }
         QPushButton:hover {
+            background-color: #666666;
+        }
+        QPushButton:focus {
+            border: 1px solid #00aaff;
             background-color: #666666;
         }
         QLineEdit, QTextEdit {
