@@ -3,6 +3,7 @@ import logging
 import json
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
 from PyQt6.QtCore import Qt, QLineF
+from PyQt6.QtGui import QPainter
 import api_client
 from widgets import NodeWidget, Port, Connection
 
@@ -17,6 +18,7 @@ class ConnectionView(QGraphicsView):
         super().__init__(scene)
         self.start_port = None
         self.temp_line = None
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
     def mousePressEvent(self, event):
         item = self.itemAt(event.pos())
@@ -58,15 +60,23 @@ class MainWindow(QMainWindow):
         self.view = ConnectionView(self.scene)
 
         self.add_node_button = QPushButton("Add Node")
+        self.add_node_button.setShortcut("Ctrl+N")
+        self.add_node_button.setToolTip("Add a new LLM node (Ctrl+N)")
         self.add_node_button.clicked.connect(lambda: self.add_node())
 
         self.save_button = QPushButton("Save Graph")
+        self.save_button.setShortcut("Ctrl+S")
+        self.save_button.setToolTip("Save the current graph to graph.json (Ctrl+S)")
         self.save_button.clicked.connect(self.save_graph)
 
         self.load_button = QPushButton("Load Graph")
+        self.load_button.setShortcut("Ctrl+L")
+        self.load_button.setToolTip("Load a graph from graph.json (Ctrl+L)")
         self.load_button.clicked.connect(self.load_graph)
 
         self.execute_button = QPushButton("Execute Graph")
+        self.execute_button.setShortcut("Ctrl+R")
+        self.execute_button.setToolTip("Execute the graph in topological order (Ctrl+R)")
         self.execute_button.clicked.connect(self.execute_graph)
 
         self.layout.addWidget(self.add_node_button)
@@ -194,11 +204,18 @@ if __name__ == "__main__":
         QPushButton:hover {
             background-color: #666666;
         }
+        QPushButton:focus {
+            border: 1px solid #0078d4;
+            background-color: #5a5a5a;
+        }
         QLineEdit, QTextEdit {
             background-color: #3c3c3c;
             border: 1px solid #555555;
             padding: 5px;
             border-radius: 3px;
+        }
+        QLineEdit:focus, QTextEdit:focus {
+            border: 1px solid #0078d4;
         }
     """)
 
