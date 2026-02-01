@@ -1,7 +1,7 @@
 import sys
 import logging
 import json
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QGraphicsLineItem
 from PyQt6.QtCore import Qt, QLineF
 import api_client
 from widgets import NodeWidget, Port, Connection
@@ -57,22 +57,34 @@ class MainWindow(QMainWindow):
         self.scene = QGraphicsScene()
         self.view = ConnectionView(self.scene)
 
+        self.button_layout = QHBoxLayout()
+
         self.add_node_button = QPushButton("Add Node")
+        self.add_node_button.setToolTip("Add Node (Ctrl+N)")
+        self.add_node_button.setShortcut("Ctrl+N")
         self.add_node_button.clicked.connect(lambda: self.add_node())
 
         self.save_button = QPushButton("Save Graph")
+        self.save_button.setToolTip("Save Graph (Ctrl+S)")
+        self.save_button.setShortcut("Ctrl+S")
         self.save_button.clicked.connect(self.save_graph)
 
         self.load_button = QPushButton("Load Graph")
+        self.load_button.setToolTip("Load Graph (Ctrl+L)")
+        self.load_button.setShortcut("Ctrl+L")
         self.load_button.clicked.connect(self.load_graph)
 
         self.execute_button = QPushButton("Execute Graph")
+        self.execute_button.setToolTip("Execute Graph (Ctrl+R)")
+        self.execute_button.setShortcut("Ctrl+R")
         self.execute_button.clicked.connect(self.execute_graph)
 
-        self.layout.addWidget(self.add_node_button)
-        self.layout.addWidget(self.save_button)
-        self.layout.addWidget(self.load_button)
-        self.layout.addWidget(self.execute_button)
+        self.button_layout.addWidget(self.add_node_button)
+        self.button_layout.addWidget(self.save_button)
+        self.button_layout.addWidget(self.load_button)
+        self.button_layout.addWidget(self.execute_button)
+
+        self.layout.addLayout(self.button_layout)
         self.layout.addWidget(self.view)
 
         logging.info("Application Started")
@@ -192,6 +204,10 @@ if __name__ == "__main__":
             border-radius: 3px;
         }
         QPushButton:hover {
+            background-color: #666666;
+        }
+        QPushButton:focus {
+            border: 1px solid #00aaff;
             background-color: #666666;
         }
         QLineEdit, QTextEdit {

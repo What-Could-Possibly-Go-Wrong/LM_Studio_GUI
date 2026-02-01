@@ -2,7 +2,7 @@ import uuid
 import logging
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
 
 class Port(QGraphicsItem):
@@ -11,7 +11,7 @@ class Port(QGraphicsItem):
         self.is_output = is_output
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsScenePositionChanges)
         self.rect = QGraphicsRectItem(-5, -5, 10, 10, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.cyan))
+        self.rect.setBrush(QBrush(QColor("cyan")))
 
     def boundingRect(self):
         return self.rect.boundingRect()
@@ -31,12 +31,12 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
-        self.rect.setPen(QPen(Qt.GlobalColor.white))
+        self.rect.setBrush(QBrush(QColor("darkGray")))
+        self.rect.setPen(QPen(QColor("white")))
 
         # Create the title
         self.title = QGraphicsTextItem(self.name, self)
-        self.title.setDefaultTextColor(Qt.GlobalColor.white)
+        self.title.setDefaultTextColor(QColor("white"))
         self.title.setPos(5, 5)
 
         # Add ports
@@ -79,7 +79,7 @@ class Connection(QGraphicsPathItem):
         super().__init__()
         self.start_port = start_port
         self.end_port = end_port
-        self.setPen(QPen(Qt.GlobalColor.white, 2))
+        self.setPen(QPen(QColor("white"), 2))
         self.update_path()
 
     def to_dict(self):
