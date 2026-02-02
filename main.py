@@ -1,8 +1,9 @@
 import sys
 import logging
 import json
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
-from PyQt6.QtCore import Qt, QLineF
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QGraphicsLineItem
+from PyQt6.QtCore import QLineF
+from PyQt6.QtGui import QShortcut, QKeySequence, QPainter
 import api_client
 from widgets import NodeWidget, Port, Connection
 
@@ -56,23 +57,46 @@ class MainWindow(QMainWindow):
 
         self.scene = QGraphicsScene()
         self.view = ConnectionView(self.scene)
+        self.view.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Toolbar layout
+        self.toolbar_layout = QHBoxLayout()
 
         self.add_node_button = QPushButton("Add Node")
+        self.add_node_button.setToolTip("Add a new LLM node to the graph (Ctrl+N)")
         self.add_node_button.clicked.connect(lambda: self.add_node())
 
         self.save_button = QPushButton("Save Graph")
+        self.save_button.setToolTip("Save the current graph to graph.json (Ctrl+S)")
         self.save_button.clicked.connect(self.save_graph)
 
         self.load_button = QPushButton("Load Graph")
+        self.load_button.setToolTip("Load a graph from graph.json (Ctrl+L)")
         self.load_button.clicked.connect(self.load_graph)
 
         self.execute_button = QPushButton("Execute Graph")
+        self.execute_button.setToolTip("Execute the graph in topological order (Ctrl+R)")
         self.execute_button.clicked.connect(self.execute_graph)
 
-        self.layout.addWidget(self.add_node_button)
-        self.layout.addWidget(self.save_button)
-        self.layout.addWidget(self.load_button)
-        self.layout.addWidget(self.execute_button)
+        # Keyboard shortcuts
+        self.add_node_shortcut = QShortcut(QKeySequence("Ctrl+N"), self)
+        self.add_node_shortcut.activated.connect(self.add_node)
+
+        self.save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        self.save_shortcut.activated.connect(self.save_graph)
+
+        self.load_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
+        self.load_shortcut.activated.connect(self.load_graph)
+
+        self.execute_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
+        self.execute_shortcut.activated.connect(self.execute_graph)
+
+        self.toolbar_layout.addWidget(self.add_node_button)
+        self.toolbar_layout.addWidget(self.save_button)
+        self.toolbar_layout.addWidget(self.load_button)
+        self.toolbar_layout.addWidget(self.execute_button)
+
+        self.layout.addLayout(self.toolbar_layout)
         self.layout.addWidget(self.view)
 
         logging.info("Application Started")
@@ -193,6 +217,10 @@ if __name__ == "__main__":
         }
         QPushButton:hover {
             background-color: #666666;
+        }
+        QPushButton:focus {
+            border: 1px solid #0078d4;
+            background-color: #5a5a5a;
         }
         QLineEdit, QTextEdit {
             background-color: #3c3c3c;
