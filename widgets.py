@@ -1,17 +1,24 @@
 import uuid
 import logging
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
-from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QBrush, QPen, QPainterPath
+from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem
+from PyQt6.QtCore import QPointF
+from PyQt6.QtGui import QBrush, QPen, QPainterPath, QColor
 import api_client
 
 class Port(QGraphicsItem):
     def __init__(self, parent, is_output=False):
         super().__init__(parent)
         self.is_output = is_output
+        self.connections = []
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsScenePositionChanges)
         self.rect = QGraphicsRectItem(-5, -5, 10, 10, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.cyan))
+        self.rect.setBrush(QBrush(QColor("#00ffff")))
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.GraphicsItemChange.ItemScenePositionHasChanged:
+            for conn in self.connections:
+                conn.update_path()
+        return super().itemChange(change, value)
 
     def boundingRect(self):
         return self.rect.boundingRect()
@@ -31,12 +38,12 @@ class NodeWidget(QGraphicsItem):
 
         # Create the main box
         self.rect = QGraphicsRectItem(0, 0, 150, 100, self)
-        self.rect.setBrush(QBrush(Qt.GlobalColor.darkGray))
-        self.rect.setPen(QPen(Qt.GlobalColor.white))
+        self.rect.setBrush(QBrush(QColor("darkgray")))
+        self.rect.setPen(QPen(QColor("white")))
 
         # Create the title
         self.title = QGraphicsTextItem(self.name, self)
-        self.title.setDefaultTextColor(Qt.GlobalColor.white)
+        self.title.setDefaultTextColor(QColor("white"))
         self.title.setPos(5, 5)
 
         # Add ports
@@ -77,10 +84,18 @@ class NodeWidget(QGraphicsItem):
 class Connection(QGraphicsPathItem):
     def __init__(self, start_port, end_port):
         super().__init__()
-        self.start_port = start_port
-        self.end_port = end_port
-        self.setPen(QPen(Qt.GlobalColor.white, 2))
+        self.start_port, self.end_port = start_port, end_port
+        self.start_port.connections.append(self)
+        self.end_port.connections.append(self)
+        self.setPen(QPen(QColor("white"), 2))
         self.update_path()
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.GraphicsItemChange.ItemSceneHasChanged and not value:
+            for p in [self.start_port, self.end_port]:
+                if self in p.connections:
+                    p.connections.remove(self)
+        return super().itemChange(change, value)
 
     def to_dict(self):
         start_node = self.start_port.parentItem()
@@ -95,5 +110,11 @@ class Connection(QGraphicsPathItem):
         start_pos = self.start_port.scenePos()
         end_pos = self.end_port.scenePos()
         path.moveTo(start_pos)
-        path.lineTo(end_pos)
+
+        # Cubic Bezier curve for a smoother look
+        dx = end_pos.x() - start_pos.x()
+        cp1 = QPointF(start_pos.x() + dx / 2, start_pos.y())
+        cp2 = QPointF(end_pos.x() - dx / 2, end_pos.y())
+        path.cubicTo(cp1, cp2, end_pos)
+
         self.setPath(path)
