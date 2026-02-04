@@ -1,8 +1,9 @@
 import sys
 import logging
 import json
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QPushButton, QGraphicsLineItem
-from PyQt6.QtCore import Qt, QLineF
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QGraphicsLineItem
+from PyQt6.QtCore import QLineF
+from PyQt6.QtGui import QPainter
 import api_client
 from widgets import NodeWidget, Port, Connection
 
@@ -15,6 +16,7 @@ logging.basicConfig(filename='debug.log',
 class ConnectionView(QGraphicsView):
     def __init__(self, scene):
         super().__init__(scene)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.start_port = None
         self.temp_line = None
 
@@ -54,29 +56,33 @@ class MainWindow(QMainWindow):
 
         self.layout = QVBoxLayout(self.central_widget)
 
+        self.btn_layout = QHBoxLayout()
+        self.layout.addLayout(self.btn_layout)
+
         self.scene = QGraphicsScene()
         self.view = ConnectionView(self.scene)
 
-        self.add_node_button = QPushButton("Add Node")
-        self.add_node_button.clicked.connect(lambda: self.add_node())
+        self.add_btn("Add Node", "Add a new LLM node to the graph", "Ctrl+N", lambda: self.add_node())
+        self.add_btn("Save Graph", "Save the current graph to graph.json", "Ctrl+S", self.save_graph)
+        self.add_btn("Load Graph", "Load a graph from graph.json", "Ctrl+L", self.load_graph)
+        self.add_btn("Execute Graph", "Execute the LLM calls in the graph", "Ctrl+R", self.execute_graph)
 
-        self.save_button = QPushButton("Save Graph")
-        self.save_button.clicked.connect(self.save_graph)
-
-        self.load_button = QPushButton("Load Graph")
-        self.load_button.clicked.connect(self.load_graph)
-
-        self.execute_button = QPushButton("Execute Graph")
-        self.execute_button.clicked.connect(self.execute_graph)
-
-        self.layout.addWidget(self.add_node_button)
-        self.layout.addWidget(self.save_button)
-        self.layout.addWidget(self.load_button)
-        self.layout.addWidget(self.execute_button)
         self.layout.addWidget(self.view)
+
+        self.statusBar().showMessage("Ready")
 
         logging.info("Application Started")
         api_client.get_models()
+
+    def add_btn(self, text, tooltip, shortcut, slot):
+        btn = QPushButton(text)
+        btn.setToolTip(f"{tooltip} ({shortcut})")
+        btn.setShortcut(shortcut)
+        btn.setAccessibleName(text)
+        btn.setAccessibleDescription(tooltip)
+        btn.clicked.connect(slot)
+        self.btn_layout.addWidget(btn)
+        return btn
 
     def add_node(self, name="LLM Box", pos=None, node_id=None):
         node = NodeWidget(name, node_id=node_id)
@@ -100,6 +106,7 @@ class MainWindow(QMainWindow):
         with open('graph.json', 'w') as f:
             json.dump(graph_data, f, indent=4)
         logging.info("Graph saved to graph.json")
+        self.statusBar().showMessage("Graph saved to graph.json", 3000)
 
     def load_graph(self):
         try:
@@ -123,6 +130,7 @@ class MainWindow(QMainWindow):
                 self.scene.addItem(connection)
 
         logging.info("Graph loaded from graph.json")
+        self.statusBar().showMessage("Graph loaded from graph.json", 3000)
 
     def execute_graph(self):
         nodes = [item for item in self.scene.items() if isinstance(item, NodeWidget)]
