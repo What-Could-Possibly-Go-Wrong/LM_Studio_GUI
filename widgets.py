@@ -1,7 +1,7 @@
 import uuid
 import logging
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem, QVBoxLayout, QLineEdit
-from PyQt6.QtCore import Qt, QPointF
+from PyQt6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPathItem
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QBrush, QPen, QPainterPath
 import api_client
 
